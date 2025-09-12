@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "api-gateway"
+		},
+		{
+			"path": "product-service"
+		},
+		{
+			"path": "order-service"
+		},
+		{
+			"path": "user-service"
+		}
+	],
+	"settings": {}
+}
