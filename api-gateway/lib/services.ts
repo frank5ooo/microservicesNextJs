@@ -10,5 +10,6 @@ export const services = {
         get() {
             return axios.get<{name:string}[]>(`${process.env.USERS_SERVICE_URL!}/api`).then(res => res.data);
         },
+        
     },
 };

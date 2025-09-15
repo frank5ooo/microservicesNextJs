@@ -1,10 +1,21 @@
+"use client";
+import { useEffect, useState, PropsWithChildren } from "react";
+import LoginModal from "@/components/login-modal";
 import axios from "axios";
-import { PropsWithChildren } from "react";
 
-export default async function ACL({children}: PropsWithChildren) {
-    const response = await axios.get(process.env.USERS_SERVICE_URL!);
-    const usuario = response.data;
+export default function ACL({ children }: PropsWithChildren) {
+  const [isValid, setIsValid] = useState<boolean | null>(null);
 
-    if(!usuario) return console.log("<PaginaError/>")
-    return children
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return setIsValid(false);
+
+    axios
+      .post("http://localhost:3000/api/auth", { token })
+      .then((res) => setIsValid(res.data.valid));
+  }, []);
+
+  if (!isValid) return <LoginModal />;
+
+  return <>{children}</>;
 }
