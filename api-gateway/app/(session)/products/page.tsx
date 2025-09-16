@@ -1,7 +1,7 @@
-import { services } from "@/lib/services";
+import { getProducts } from "@/actions/products-services";
 
 export default async function ProductsPage() {
-  const products = await services.products.get();
+  const products = await getProducts();
   return (
     <ul>
       {products.map(({ name }, index) => (

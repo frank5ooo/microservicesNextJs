@@ -6,18 +6,35 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { username, password } = body;
 
+    console.log(body);
+
     if (username === "qwe" && password === "qwe") {
-        /** Token: JWS (JSON Web Signature) */
-        const jwt = sign({
-            name: username,
-            email: "qwe@qwe.com",
-        }, process.env.JWT_SECRET!);
-      return NextResponse.json({isAuthenticated: true, token: jwt, message: "tamo chelo" });
+      /** Token: JWS (JSON Web Signature) */
+      const jwt = sign(
+        {
+          name: username,
+          email: "qwe@qwe.com",
+        },
+        "shhhhh"
+      );
+
+      console.log("jwt", jwt);
+      return NextResponse.json({
+        isAuthenticated: true,
+        token: jwt,
+        message: "tamo chelo",
+      });
     }
 
-    return NextResponse.json({ isAuthenticated: false, message: "Usuario o contraseña incorrecta" });
+    return NextResponse.json({
+      isAuthenticated: false,
+      message: "Usuario o contraseña incorrecta",
+    });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ isAuthenticated: false, message: "Error interno" });
+    return NextResponse.json({
+      isAuthenticated: false,
+      message: "Error interno",
+    });
   }
 }

@@ -1,28 +1,27 @@
 "use client";
 
+import { login } from "@/actions/users-services";
 import { useState } from "react";
-import axios from "axios";
 
 export default function LoginModal() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  
   const handleSubmit = async (e: React.FormEvent) => {
-    
     e.preventDefault();
     setError("");
+    
+    const res = await login(username, password);
 
-    const res = await axios.post("http://localhost:3000/api/login", {
-      username,
-      password,
-    });
+    console.log("res",res);
 
-    if (res.data.isAuthenticated) {
-      localStorage.setItem("token", res.data.token);
+    if (res.isAuthenticated) {
+      localStorage.setItem("token", res.token!);
       window.location.reload(); // Recargamos para que ACL lo valide
     } else {
-      setError(res.data.message || "Error de login");
+      setError(res.message! || "Error de login");
     }
   };
 

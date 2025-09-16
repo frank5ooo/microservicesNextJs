@@ -1,7 +1,7 @@
-import { services } from "@/lib/services";
+import { getUsers } from "@/actions/users-services";
 
 export default async function UserPage() {
-  const users = await services.users.get();
+  const users = await getUsers();
   return (
     <ul>
       {users.map(({ name }, index) => (
