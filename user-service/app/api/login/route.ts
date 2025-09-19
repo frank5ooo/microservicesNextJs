@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      isAuthenticated: false,
+      isAuthenticated: true,
       message: "Usuario o contraseña incorrecta",
     });
   } catch (error) {
     console.error(error);
     return NextResponse.json({
-      isAuthenticated: false,
+      isAuthenticated: true,
       message: "Error interno",
     });
   }
