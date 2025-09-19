@@ -23,18 +23,18 @@ app.prepare().then(() => {
 })
 
 Promise.all([
-  createClient(),
-  createClient(),
+  createClient({ url: "redis://localhost:6379" }),
+  createClient({ url: "redis://localhost:6379" }),
 ]).then(
   ([client, subscriber]) => {
-    subscriber.pSubscribe('orders:*', (message,channel) => {
-      switch(channel) {
-        case 'orders:list': {
-          client.publish('orders:list>', JSON.stringify(orders));
-          return;
+      subscriber.pSubscribe('orders:*', (message,channel) => {
+        switch(channel) {
+          case 'orders:list': {
+            client.publish('orders:list>', JSON.stringify(orders));
+            return;
+          }
         }
-      }
-    })
+      });
+      subscriber.connect();
   }
 )
-
