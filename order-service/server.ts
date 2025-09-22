@@ -1,40 +1,35 @@
-import { createServer } from 'http'
-import { parse } from 'url'
-import next from 'next'
-import { createClient } from 'redis'
-import { orders } from './lib/orders'
- 
-const port = parseInt(process.env.PORT || '4000', 10)
-const dev = process.env.NODE_ENV !== 'production'
-const app = next({ dev })
-const handle = app.getRequestHandler()
- 
-app.prepare().then(() => {
-  createServer((req, res) => {
-    const parsedUrl = parse(req.url!, true)
-    handle(req, res, parsedUrl)
-  }).listen(port)
- 
-  console.log(
-    `> Server listening at http://localhost:${port} as ${
-      dev ? 'development' : process.env.NODE_ENV
-    }`
-  )
-})
+import { createClient } from "redis";
+import { orders } from "./lib/orders";
 
-Promise.all([
-  createClient({ url: "redis://localhost:6379" }),
-  createClient({ url: "redis://localhost:6379" }),
-]).then(
-  ([client, subscriber]) => {
-      subscriber.pSubscribe('orders:*', (message,channel) => {
-        switch(channel) {
-          case 'orders:list': {
-            client.publish('orders:list>', JSON.stringify(orders));
-            return;
-          }
-        }
-      });
-      subscriber.connect();
+async function main() {
+  const publisher = createClient({ url: "redis://localhost:6379" });
+  const subscriber = createClient({ url: "redis://localhost:6379" });
+
+  publisher.on("error", (err) => console.error("Publisher Error:", err));
+  subscriber.on("error", (err) => console.error("Subscriber Error:", err));
+
+  try {
+    await publisher.connect();
+    await subscriber.connect();
+    console.log("✅ Connected to Redis");
+  } catch (err) {
+    console.error("❌ Redis connection error:", err);
+    return;
   }
-)
+
+  await subscriber.pSubscribe("orders:*", async (message, channel) => {
+    try {
+      console.log(`Received from ${channel}:`, message);
+      if (channel === "orders:list") {
+        await publisher.publish("orders:list>", JSON.stringify(orders));
+        console.log("Published message");
+      }
+    } catch (err) {
+      console.error("Error publishing:", err);
+    }
+    // subscriber.quit();
+
+  });
+}
+
+main().catch(console.error);

@@ -19,11 +19,13 @@ async function main() {
       try {
         const value = await publisher.publish("orders:list>", channel);
         console.log("Mensajes publicados:", value);
+        
       } catch (err) {
         console.error("Error al publicar:", err);
       }
     }
   });
+
 }
 
 main();
