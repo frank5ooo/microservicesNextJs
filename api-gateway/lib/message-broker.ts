@@ -1,40 +1,70 @@
 import { randomUUID } from "crypto";
-import { RedisClientType } from "redis"
+import { createClient, RedisClientType } from "redis";
+import { filter, firstValueFrom, Subject } from "rxjs";
 
-type MessageEvents = Record<string, (message: unknown) => unknown>;
-interface Order {name: string}
-
-export class MessageBroker<Name extends string,Ev extends MessageEvents> {
-    protected  publisher!: RedisClientType;
-    protected  subscriber!: RedisClientType;
-
-    constructor(
-        protected readonly name: Name,
-    ) {}
-
-    async send<Ch extends string & keyof Ev>(channel: Ch, body: Parameters<Ev[Ch]>[0]): Promise<ReturnType<Ev[Ch]>> {
-        const request = new Promise((r,x) => {
-            const requestId = randomUUID();
-            setTimeout(x, 2000, Error("Service timed out"));
-            this.subscriber.subscribe(`${this.name}:${channel}|${requestId}>`, r);
-            this.publisher.publish(`${channel}|${requestId}`, body?.toString() ?? "");
-        });
-        return await request;
-    }
-
-    emit(channel: string, body: unknown) {
-        return this.publisher.publish()
-    }
+export interface Transporter {
+  send<TResult = unknown, TInput = unknown>(
+    channel: string,
+    body: TInput
+  ): Promise<TResult>;
+  emit<TInput = unknown>(channel: string, body: TInput): Promise<void>;
 }
 
-const ordersService = new MessageBroker<'orders', {
-    list(): Order[],
-}>('orders');
+export class RedisTransporter implements Transporter {
+  private readonly responseSubject = new Subject<{
+    response: unknown;
+    id: string;
+  }>();
+  private readonly publisher: RedisClientType;
 
-async function miAction() {
-    const orders = await ordersService.send("list", undefined);
+  constructor(url: string) {
+    this.publisher = createClient({ url });
+    createClient({ url }).pSubscribe("*.reply", (message) => {
+      const response = this.deserialize(message);
+      this.responseSubject.next(response);
+    });
+  }
+
+  async send<TResult = unknown, TInput = unknown>(
+    channel: string,
+    body: TInput
+  ): Promise<TResult> {
+    const payload = this.payload(channel, body);
+    const serializedPayload = this.serialize(payload);
+    await this.publisher?.publish(channel, serializedPayload);
+    const result = await firstValueFrom(
+      this.responseSubject.pipe(
+        filter(({ id }) => id === payload.id)
+    )
+    );
+    return result.response as TResult;
+  }
+
+  async emit<TInput = unknown>(channel: string, body: TInput): Promise<void> {
+    await this.publisher.publish(
+      channel,
+      this.serialize(this.payload(channel, body))
+    );
+  }
+
+  protected payload(pattern: string, body: unknown) {
+    const id = randomUUID();
+    return {
+      id,
+      body,
+      pattern,
+    };
+  }
+
+  protected serialize(payload: unknown) {
+    return JSON.stringify(payload);
+  }
+
+  protected deserialize(serializedString: string) {
+    return JSON.parse(serializedString) as { response: unknown; id: string };
+  }
 }
 
-ordersService.send('list', undefined).then(orders => {
-    orders
-});
+// const redis = new RedisTransporter('');
+
+// redis.send('');

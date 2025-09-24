@@ -7,7 +7,7 @@ interface Order {
 export const orders: Order[] = [
     {
         id: 1,
-        description: "Compré un pollo",
+        description: "Compre un pollo",
         price: 800000,
     }
 ]
