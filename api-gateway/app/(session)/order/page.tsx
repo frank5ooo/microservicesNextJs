@@ -1,11 +1,12 @@
-import { getOrderNest } from "@/actions/order-services";
+import { getProducts } from "@/actions/order-services";
+
 export default async function ProductsPage() {
-  const products = await ();
+  const products = await getProducts();
+
   return (
-    <ul>
-      {products.map(({ name }, index) => (
-        <li key={index}>{name}</li>
-      ))}
-    </ul>
+    <div>
+      <h1>Respuesta</h1>
+      <p>{JSON.stringify(products, null, 2)}</p>
+    </div>
   );
 }

@@ -16,10 +16,26 @@ export class RedisTransporter implements Transporter {
     id: string;
   }>();
   private readonly publisher: RedisClientType;
+  private readonly subscriber: RedisClientType;
 
   constructor(url: string) {
     this.publisher = createClient({ url });
+    this.publisher.on("error", (err) => console.error("Redis error:", err));
+
+    this.subscriber = createClient({ url });
+    this.subscriber.on("error", (err) => console.error("Redis error:", err));
+
     createClient({ url }).pSubscribe("*.reply", (message) => {
+      const response = this.deserialize(message);
+      this.responseSubject.next(response);
+    });
+  }
+
+  async connect() {
+    await this.publisher.connect();
+    await this.subscriber.connect();
+
+    this.subscriber.pSubscribe("*.reply", (message) => {
       const response = this.deserialize(message);
       this.responseSubject.next(response);
     });
@@ -29,14 +45,15 @@ export class RedisTransporter implements Transporter {
     channel: string,
     body: TInput
   ): Promise<TResult> {
+    await this.connect();
+
     const payload = this.payload(channel, body);
     const serializedPayload = this.serialize(payload);
     await this.publisher?.publish(channel, serializedPayload);
     const result = await firstValueFrom(
-      this.responseSubject.pipe(
-        filter(({ id }) => id === payload.id)
-    )
+      this.responseSubject.pipe(filter(({ id }) => id === payload.id))
     );
+
     return result.response as TResult;
   }
 
@@ -45,6 +62,10 @@ export class RedisTransporter implements Transporter {
       channel,
       this.serialize(this.payload(channel, body))
     );
+  }
+
+  async quit(): Promise<void> {
+    await this.publisher.quit();
   }
 
   protected payload(pattern: string, body: unknown) {

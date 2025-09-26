@@ -1,5 +1,8 @@
-"use server"
+"use server";
 
-import { getOrderNest } from "@/lib/order_nest"
+import { getOrderNest } from "@/lib/order_nest";
 
-export const getProducts = services.products.get;
+export async function getProducts() {
+ 
+    return await getOrderNest();
+}
