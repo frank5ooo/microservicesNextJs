@@ -15,8 +15,6 @@ export default function LoginModal() {
     
     const res = await login(username, password);
 
-    console.log("res",res);
-
     if (res.isAuthenticated) {
       localStorage.setItem("token", res.token!);
       window.location.reload(); // Recargamos para que ACL lo valide

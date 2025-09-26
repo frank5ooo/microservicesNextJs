@@ -10,7 +10,6 @@ export default function ACL({ children }: PropsWithChildren) {
     const token = localStorage.getItem("token");
     if (!token) return setIsValid(false);
 
-    console.log("useEffect");
 
     const validate = async () => {
       try {

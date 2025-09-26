@@ -24,17 +24,12 @@ export class RedisTransporter implements Transporter {
 
     this.subscriber = createClient({ url });
     this.subscriber.on("error", (err) => console.error("Redis error:", err));
-
-    createClient({ url }).pSubscribe("*.reply", (message) => {
-      const response = this.deserialize(message);
-      this.responseSubject.next(response);
-    });
+    this.connect();
   }
 
   async connect() {
     await this.publisher.connect();
     await this.subscriber.connect();
-
     this.subscriber.pSubscribe("*.reply", (message) => {
       const response = this.deserialize(message);
       this.responseSubject.next(response);
@@ -45,14 +40,17 @@ export class RedisTransporter implements Transporter {
     channel: string,
     body: TInput
   ): Promise<TResult> {
-    await this.connect();
 
     const payload = this.payload(channel, body);
+
+    console.log("payload", payload);
     const serializedPayload = this.serialize(payload);
+
     await this.publisher?.publish(channel, serializedPayload);
     const result = await firstValueFrom(
       this.responseSubject.pipe(filter(({ id }) => id === payload.id))
     );
+    console.log("serializedPayload", serializedPayload);
 
     return result.response as TResult;
   }
@@ -68,11 +66,11 @@ export class RedisTransporter implements Transporter {
     await this.publisher.quit();
   }
 
-  protected payload(pattern: string, body: unknown) {
+  protected payload(pattern: string, data: unknown) {
     const id = randomUUID();
     return {
       id,
-      body,
+      data,
       pattern,
     };
   }
