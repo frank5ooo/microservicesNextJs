@@ -1,7 +1,12 @@
+"use server"
+
 import { getProducts } from "@/actions/order-services";
 
 export default async function ProductsPage() {
+
+
   const products = await getProducts();
+  console.log("paso");
 
   return (
     <div>
@@ -32,7 +37,7 @@ export default async function ProductsPage() {
             maxWidth: "80%",
           }}
         >
-          {JSON.stringify(products, null, 2)}
+          {products.join(", ")}
         </pre>
       </div>
     </div>

@@ -40,17 +40,19 @@ export class RedisTransporter implements Transporter {
     channel: string,
     body: TInput
   ): Promise<TResult> {
-
     const payload = this.payload(channel, body);
 
-    console.log("payload", payload);
     const serializedPayload = this.serialize(payload);
 
     await this.publisher?.publish(channel, serializedPayload);
+
+    console.log("Esperando id:", payload.id);
+
     const result = await firstValueFrom(
-      this.responseSubject.pipe(filter(({ id }) => id === payload.id))
+      this.responseSubject.pipe(
+        filter(({ id }) => id == payload.id),
+      )
     );
-    console.log("serializedPayload", serializedPayload);
 
     return result.response as TResult;
   }
